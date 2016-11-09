@@ -73,11 +73,15 @@ import javax.swing.SortOrder;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.RowSorter.SortKey;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
 
 import de.dominik_geyer.jtimesched.JTimeSchedApp;
 import de.dominik_geyer.jtimesched.gui.table.ProjectTable;
 import de.dominik_geyer.jtimesched.project.Project;
 import de.dominik_geyer.jtimesched.project.ProjectException;
+import de.dominik_geyer.jtimesched.project.ProjectFileStorage;
 import de.dominik_geyer.jtimesched.project.ProjectSerializer;
 import de.dominik_geyer.jtimesched.project.ProjectTableModel;
 import de.dominik_geyer.jtimesched.project.ProjectTime;
@@ -105,10 +109,13 @@ public class JTimeSchedFrame extends JFrame {
 	
 	private boolean initiallyVisible = true;
 	
+	private final ProjectFileStorage storage;
+	
 	private static final int[] appIconSizes = {16, 24, 32, 40, 48, 64, 128, 256};
 	
 	public JTimeSchedFrame() {
 		super("jTimeSched");
+		this.storage = new ProjectFileStorage(JTimeSchedApp.PRJ_FILE);
 		
 		this.updateIconImage(false);
 		this.setPreferredSize(new Dimension(600, 200));
@@ -125,10 +132,23 @@ public class JTimeSchedFrame extends JFrame {
 		// add handler for GUI log
 		JTimeSchedApp.getLogger().addHandler(new JTimeSchedGUILogHandler(this.tfLog));
 		
-		
+		//migrate to newer version
+		File legacy = new File(JTimeSchedApp.PRJ_FILE_LEGACY);
+		if(legacy.exists()){
+			ProjectSerializer projectSerializer = new ProjectSerializer(JTimeSchedApp.PRJ_FILE_LEGACY);
+			try {
+				storage.store(projectSerializer.readXml());
+			} catch (ParserConfigurationException | SAXException | IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			finally{
+				legacy.delete();
+			}
+		}
 		// backup project-file
 		try {
-			this.backupProjects();
+			this.backupProjects(JTimeSchedApp.PRJ_FILE, JTimeSchedApp.PRJ_FILE_BACKUP);
 		} catch (FileNotFoundException e) {
 			// ignore this exception: no project file -> no backup
 		} catch (Exception e) {
@@ -157,8 +177,6 @@ public class JTimeSchedFrame extends JFrame {
 			System.exit(1);
 		}
 		
-		// check all projects for a today-time reset
-		checkResetToday();
 		
 		
 		// create model an associate data
@@ -190,6 +208,26 @@ public class JTimeSchedFrame extends JFrame {
 			}
 		});
 		panelBottom.add(btnAdd);
+		
+		JButton resetButton = new JButton("Reset");
+		resetButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				for(Project p: arPrj)
+				{	
+					boolean wasrunning = p.isRunning();
+					if(wasrunning){
+						p.pause();
+					}
+					p.resetToday();
+					if(wasrunning){
+						p.start();
+					}
+				}
+			}
+		});
+		panelBottom.add(resetButton);
 			
 		// bottom panel
 		panelBottom.add(Box.createRigidArea(new Dimension(10, 0)));
@@ -679,14 +717,12 @@ public class JTimeSchedFrame extends JFrame {
 	}
 	
 	protected void loadProjects() throws FileNotFoundException, Exception {
-		ProjectSerializer ps = new ProjectSerializer(JTimeSchedApp.PRJ_FILE);
-		this.arPrj = ps.readXml();
+		this.arPrj = storage.load();
 	}
 	
 	protected void saveProjects() {
 		try {
-			ProjectSerializer ps = new ProjectSerializer(JTimeSchedApp.PRJ_FILE);
-			ps.writeXml(JTimeSchedFrame.this.arPrj);
+			storage.store(arPrj);
 		} catch (Exception e) {
 			JTimeSchedApp.getLogger().severe("Error saving project file: " + e.getMessage());
 			e.printStackTrace();
@@ -702,14 +738,14 @@ public class JTimeSchedFrame extends JFrame {
 	 * @throws FileNotFoundException
 	 * @throws Exception
 	 */
-	protected void backupProjects() throws FileNotFoundException, Exception {
-		File file = new File(JTimeSchedApp.PRJ_FILE);
+	protected void backupProjects(String from, String to) throws FileNotFoundException, Exception {
+		File file = new File(from);
 
 		FileInputStream fis = null;
     	FileOutputStream fos = null;
 
 		fis  = new FileInputStream(file);
-    	fos = new FileOutputStream(new File(JTimeSchedApp.PRJ_FILE_BACKUP));
+    	fos = new FileOutputStream(new File(to));
     	
         byte[] buf = new byte[1024];
         int i = 0;

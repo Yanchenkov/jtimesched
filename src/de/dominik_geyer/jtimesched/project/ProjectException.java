@@ -19,7 +19,7 @@
 package de.dominik_geyer.jtimesched.project;
 
 @SuppressWarnings("serial")
-public class ProjectException extends Exception {
+public class ProjectException extends RuntimeException {
 	public ProjectException(String msg) {
 		super(msg);
 	}

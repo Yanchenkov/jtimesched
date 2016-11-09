@@ -19,10 +19,12 @@
 package de.dominik_geyer.jtimesched.project;
 
 import java.awt.Color;
+import java.io.Serializable;
 import java.util.Date;
 
 
-public class Project {
+public class Project implements Serializable{
+	private static final long serialVersionUID = -6656596856980696709L;
 	private String title;
 	private String notes;
 	
