@@ -74,3 +74,9 @@ release 1.1
 	- fixed jTimeSched.exe-launcher for 64-bit systems
 	- better error messages when projects/settings fail to load
 
+release 1.2
+	- rid of xml storage
+	- storing current state on exit
+	- explicit reset of projects
+	- add more colors and reorder them
+	- export today projects feature

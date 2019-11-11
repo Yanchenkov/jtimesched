@@ -1,17 +1,17 @@
 /* jTimeSched - A simple and lightweight time tracking tool
  * Copyright (C) 2010-2012 Dominik D. Geyer <dominik.geyer@gmail.com>
  * See LICENSE.txt for details.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -37,6 +37,7 @@ public class JTimeSchedApp {
 	static public final String DATA_PATH = "data/";
 	static public final String IMAGES_PATH = DATA_PATH + "img/";
 	static public final String CONF_PATH = "conf/";
+	static public final String EXPORT_PATH = "export/";
 	static public final String PRJ_FILE = CONF_PATH + "jTimeSched.projects.dat";
 	static public final String PRJ_FILE_BACKUP = JTimeSchedApp.PRJ_FILE + ".backup";
 	static public final String PRJ_FILE_LEGACY = CONF_PATH + "jTimeSched.projects";
@@ -44,12 +45,12 @@ public class JTimeSchedApp {
 	static public final String SETTINGS_FILE = CONF_PATH + "jTimeSched.settings";
 	static public final String LOCK_FILE = CONF_PATH + "jTimeSched.lock";
 	static public final String LOG_FILE = CONF_PATH + "jTimeSched.log";
-	
+
 	static private Logger LOGGER;
-	
+
 	/**
 	 * Application's entry point.
-	 * 
+	 *
 	 * @param args Command line arguments
 	 */
 	public static void main(String[] args) {
@@ -57,7 +58,11 @@ public class JTimeSchedApp {
 		File dirConf = new File(JTimeSchedApp.CONF_PATH);
 		if (!dirConf.isDirectory())
 			dirConf.mkdir();
-		
+
+		File exportConf = new File(JTimeSchedApp.EXPORT_PATH);
+		if (!exportConf.isDirectory())
+			exportConf.mkdir();
+
 		// request lock
 		if (!JTimeSchedApp.lockInstance()) {
 			JOptionPane.showMessageDialog(null,
@@ -70,15 +75,15 @@ public class JTimeSchedApp {
 					"jTimeSched will exit now.",
 					"Another running instance for projects-file detected",
 					JOptionPane.WARNING_MESSAGE);
-			
+
 			System.exit(1);
 		}
-		
-		
+
+
 		// initialize logger
 		JTimeSchedApp.LOGGER = Logger.getLogger("JTimeSched");
 		JTimeSchedApp.LOGGER.setLevel(Level.ALL);
-		
+
 		try {
 			FileHandler fh = new FileHandler(JTimeSchedApp.LOG_FILE, true);
 			fh.setFormatter(new PlainTextFormatter());
@@ -87,15 +92,15 @@ public class JTimeSchedApp {
 			e.printStackTrace();
 			System.err.println("Enable to initialize logger for file "+JTimeSchedApp.LOG_FILE);
 		}
-		
-		
+
+
 		// open main frame
 		new JTimeSchedFrame();
 	}
 
 	/**
 	 * Determines and returns the application's version, which is set in the Manifest file in attribute "ImplementationVersion".
-	 * 
+	 *
 	 * @return String The application's version; if not set in Manifest or not available it returns the string "unknown"
 	 */
 	public static String getAppVersion()
